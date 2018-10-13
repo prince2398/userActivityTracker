@@ -1,0 +1,18 @@
+{
+  "name": "useractivity",
+  "version": "1.0.0",
+  "description": "app to track user activity",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "body-parser": "*",
+    "ejs": "^2.6.1",
+    "express": "*",
+    "method-override": "*",
+    "mongoose": "^5.3.3"
+  },
+  "author": "Prince Piyush",
+  "license": "ISC"
+}
