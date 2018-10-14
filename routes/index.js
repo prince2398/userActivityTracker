@@ -15,12 +15,13 @@ const User = mongoose.model('User',UserSchema);
 
 //routes
 router.get('/:id',(req,res)=>{
-    console.log(req.params.id);
+    // console.log(req.params.id);
     User.findById(req.params.id, (err,user)=>{
         if(err){
             res.send(err);
+        }else{
+            res.json(user);
         }
-        res.json(user);
     })
 });
 router.get('/',(req,res,next)=>{
@@ -32,11 +33,11 @@ router.get('/',(req,res,next)=>{
         if(err){
             res.send(err);
         }
-        res.redirect('/'+user._id);
+        res.json(user);
     })
 })
 router.put('/:id',(req,res)=>{
-    console.log(req.body);
+    // console.log(req.body);
     if(!req.body){
         res.send('Bad Data');
     }
@@ -51,7 +52,7 @@ router.put('/:id',(req,res)=>{
     })
 })
 router.get('/:id/admin',(req,res)=>{
-    console.log(req.params.id);
+    // console.log(req.params.id);
     User.findById(req.params.id, (err,user)=>{
         if(err){
             res.send(err);
