@@ -7,7 +7,7 @@ const app = express();
 const port = 3000;
 
 //routes
-const index = require('./routes/index')
+const api = require('./routes/api')
 
 //views
 app.set('views',path.join(__dirname,'views'));
@@ -25,7 +25,10 @@ app.use(cors());
 app.use(express.static(__dirname + '/public')); 
 
 //route
-app.use('/',index);
+app.use('/api',api);
+app.get('*',(req,res)=>{
+    res.sendFile(path.join(__dirname+'/public/index.html'));
+});
 
 app.listen(port,()=>{
     console.log(`Server started on port ${port}`);

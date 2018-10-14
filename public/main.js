@@ -166,7 +166,7 @@ module.exports = ""
 /*! no static exports found */
 /***/ (function(module, exports) {
 
-module.exports = "<!DOCTYPE html>\n<html>\n  <head>\n    <title>Admin</title>\n  </head>\n  <body>\n    <h1>User Id : {{user._id}}</h1>\n    <h3>Clicks : {{user.clicks}}</h3>\n    <h3>Hovers : {{user.hovers}}</h3>\n  </body>\n</html>"
+module.exports = "<!DOCTYPE html>\n<html>\n  <head>\n    <title>Admin</title>\n  </head>\n  <body>\n    <div *ngIf=\"user\">\n      <h1>User Id : {{user._id}}</h1>\n      <h3>Clicks : {{user.clicks}}</h3>\n      <h3>Hovers : {{user.hovers}}</h3>\n    </div>\n  </body>\n</html>"
 
 /***/ }),
 
@@ -183,6 +183,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _angular_core__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @angular/core */ "./node_modules/@angular/core/fesm5/core.js");
 /* harmony import */ var _services_collect_data_service__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../services/collect-data.service */ "./src/app/services/collect-data.service.ts");
 /* harmony import */ var _angular_router__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @angular/router */ "./node_modules/@angular/router/fesm5/router.js");
+/* harmony import */ var rxjs_observable_interval__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! rxjs/observable/interval */ "./node_modules/rxjs-compat/_esm5/observable/interval.js");
 var __decorate = (undefined && undefined.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -195,10 +196,19 @@ var __metadata = (undefined && undefined.__metadata) || function (k, v) {
 
 
 
+
 var AdminComponent = /** @class */ (function () {
     function AdminComponent(dataService, route) {
+        var _this = this;
         this.dataService = dataService;
         this.route = route;
+        this.source = Object(rxjs_observable_interval__WEBPACK_IMPORTED_MODULE_3__["interval"])(500);
+        this.subscribe = this.source.subscribe(function (x) {
+            _this.dataService.getData(_this.id).subscribe(function (user) {
+                _this.user = user;
+                console.log('updating data');
+            });
+        });
     }
     AdminComponent.prototype.ngOnInit = function () {
         var _this = this;
@@ -278,9 +288,10 @@ var NewUserComponent = /** @class */ (function () {
     NewUserComponent.prototype.ngOnInit = function () {
         var _this = this;
         this.collectData.createNewUser().subscribe(function (user) {
-            _this.user = user;
+            // console.log(user)
+            // this.user = user
             // console.log(this.user._id);
-            _this.router.navigate(['/' + _this.user._id]);
+            _this.router.navigate(['/' + user._id]);
         });
     };
     NewUserComponent = __decorate([
@@ -413,11 +424,11 @@ var __metadata = (undefined && undefined.__metadata) || function (k, v) {
 var CollectDataService = /** @class */ (function () {
     function CollectDataService(http) {
         this.http = http;
-        this.endpoint = '';
+        this.endpoint = '/api/';
         console.log('CollectDataService started...');
     }
     CollectDataService.prototype.getData = function (id) {
-        return this.http.get(this.endpoint + id, { responseType: 'text' });
+        return this.http.get(this.endpoint + id);
     };
     CollectDataService.prototype.updateUser = function (user) {
         var headers = new _angular_common_http__WEBPACK_IMPORTED_MODULE_1__["HttpHeaders"]();
@@ -425,7 +436,7 @@ var CollectDataService = /** @class */ (function () {
         return this.http.put(this.endpoint + user._id, user, { headers: headers, responseType: 'text' });
     };
     CollectDataService.prototype.createNewUser = function () {
-        return this.http.get(this.endpoint, { responseType: 'text' });
+        return this.http.get(this.endpoint);
     };
     CollectDataService = __decorate([
         Object(_angular_core__WEBPACK_IMPORTED_MODULE_0__["Injectable"])({
