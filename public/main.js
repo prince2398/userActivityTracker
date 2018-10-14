@@ -413,19 +413,19 @@ var __metadata = (undefined && undefined.__metadata) || function (k, v) {
 var CollectDataService = /** @class */ (function () {
     function CollectDataService(http) {
         this.http = http;
-        this.endpoint = '/';
+        this.endpoint = '';
         console.log('CollectDataService started...');
     }
     CollectDataService.prototype.getData = function (id) {
-        return this.http.get(this.endpoint + id);
+        return this.http.get(this.endpoint + id, { responseType: 'text' });
     };
     CollectDataService.prototype.updateUser = function (user) {
         var headers = new _angular_common_http__WEBPACK_IMPORTED_MODULE_1__["HttpHeaders"]();
         headers.append('Content-Type', 'application/json');
-        return this.http.put(this.endpoint + user._id, user, { headers: headers });
+        return this.http.put(this.endpoint + user._id, user, { headers: headers, responseType: 'text' });
     };
     CollectDataService.prototype.createNewUser = function () {
-        return this.http.get(this.endpoint);
+        return this.http.get(this.endpoint, { responseType: 'text' });
     };
     CollectDataService = __decorate([
         Object(_angular_core__WEBPACK_IMPORTED_MODULE_0__["Injectable"])({
