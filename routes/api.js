@@ -1,12 +1,17 @@
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
+const Pusher = require('pusher');
+
+const pusher = new Pusher({
+    appId: '622555',
+    key: '252cb0073819c9f5ae33',
+    secret: '3ce3347bd4253fa59b01',
+    cluster: 'ap2',
+    encrypted: true
+  });
 
 //database
-mongoose.connect('mongodb://prince:Prince2398@ds131753.mlab.com:31753/userdata',{ useNewUrlParser: true });
-mongoose.connection.on('connected',()=>{
-    console.log("Connected to DB");
-});
 const UserSchema = mongoose.Schema({
     clicks : [Number],
     hovers : [Number]
@@ -34,10 +39,12 @@ router.get('/',(req,res,next)=>{
             res.send(err);
         }
         res.json(user);
-    })
+    });
+    
 })
 router.put('/:id',(req,res)=>{
     // console.log(req.body);
+    
     if(!req.body){
         res.send('Bad Data');
     }
@@ -48,6 +55,9 @@ router.put('/:id',(req,res)=>{
         if(err){
             res.send('error Updating');
         }
+        pusher.trigger('user', 'update', {
+            user : user,
+        });
         res.json(user);
     })
 })
