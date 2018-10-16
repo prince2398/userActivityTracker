@@ -25,7 +25,7 @@ router.get('/',(req,res)=>{
 router.get('/:id',(req,res)=>{
     // console.log(req.params.id);
     const query = {user_id:req.params.id}
-    Log.find(query, (err,logs)=>{
+    Log.find(query,{}, { sort : { time : -1}},(err,logs)=>{
         if(err){
             res.json({result : 'Failed',message: err});
         }else{

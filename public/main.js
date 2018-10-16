@@ -166,7 +166,7 @@ module.exports = ""
 /*! no static exports found */
 /***/ (function(module, exports) {
 
-module.exports = "<!DOCTYPE html>\n<html>\n  <head>\n    <title>Admin</title>\n  </head>\n  <body>\n    <div *ngIf=\"user\">\n      <h1>User Id : {{user?._id}}</h1>\n      <h3>Clicks : {{user?.clicks}}</h3>\n      <h3>Hovers : {{user?.hovers}}</h3>\n    </div>\n    <h2>Logs</h2>\n    <ul>\n      <li *ngFor=\"let log of logs.sort(sortFunc) \">\n        \n        <div *ngIf=\"log.user_id == id\">\n          {{log?.time | date: \"dd-MM-yyyy HH:mm:ss\" }} : {{log.type}}ed on image {{log.image+1}}.\n        </div>\n      </li>\n    </ul>\n  </body>\n</html>"
+module.exports = "<!DOCTYPE html>\n<html>\n  <head>\n    <title>Admin</title>\n  </head>\n  <body>\n    <div *ngIf=\"user\">\n      <h1>User Id : {{user?._id}}</h1>\n      <h3>Clicks : {{user?.clicks}}</h3>\n      <h3>Hovers : {{user?.hovers}}</h3>\n    </div>\n    <h2>Logs</h2>\n    <ul>\n      <li *ngFor=\"let log of logs \">\n        \n        <div *ngIf=\"log.user_id == id\">\n          {{log?.time | date: \"dd-MM-yyyy HH:mm:ss\" }} : {{log.type}}ed on image {{log.image+1}}.\n        </div>\n      </li>\n    </ul>\n  </body>\n</html>"
 
 /***/ }),
 
