@@ -1,8 +1,6 @@
 import { Component, OnInit } from '@angular/core';
-import { CollectDataService } from '../../services/collect-data.service';
-// import { ActivatedRoute, Router } from '@angular/router';
-// import { Observable } from 'rxjs';
-// import { User } from '../../../../user';
+import * as io from 'socket.io-client';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-new-user',
@@ -11,13 +9,17 @@ import { CollectDataService } from '../../services/collect-data.service';
 })
 export class NewUserComponent implements OnInit {
 
-  constructor(private dataService:CollectDataService) { }
+  private socket = io('');
+
+  constructor(private router:Router) { }
   
   ngOnInit() {
-    // this.dataService.channel.bind('new-user', data => {
-    //   this.user = data.user ;
-    // });
-    this.dataService.createNewUser();
+    this.socket.emit('join',{user:'client'});
+
+    this.socket.on('userData',(user)=>{
+      console.log(user);
+      this.router.navigate(['/'+user._id]);
+    })
   }
   
 }

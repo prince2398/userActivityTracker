@@ -3,7 +3,6 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
 import { AppComponent } from './app.component';
-import { CollectDataService } from './services/collect-data.service';
 import { UserComponent } from './components/user/user.component';
 import { AdminComponent } from './components/admin/admin.component';
 import { NewUserComponent } from './components/new-user/new-user.component';
@@ -28,7 +27,7 @@ const routes: Routes = [
     HttpClientModule
   ],
   exports: [RouterModule],
-  providers: [CollectDataService],
+  providers: [],
   bootstrap: [AppComponent]
 })
 export class AppModule { }
