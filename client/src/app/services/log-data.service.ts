@@ -1,19 +1,16 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders} from '@angular/common/http';
 import { Log } from '../../../log';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Observable } from 'rxjs';
+import * as io from 'socket.io-client';
 
 @Injectable({
   providedIn: 'root'
 })
 export class LogDataService {
-  endpoint = 'logs/';
-
-  logs: any = [];
-
-  private logsSource = new BehaviorSubject(this.logs);
-  currentLog = this.logsSource.asObservable();
-
+  endpoint = 'http://localhost:3000/logs/';
+  
+  private socket = io('http://localhost:3000');
 
   constructor(private http:HttpClient) {
 
@@ -27,21 +24,45 @@ export class LogDataService {
 
   }
 
-  getLogs(id){
-    this.http.get<Log>(this.endpoint+id).subscribe(logs=>{
-      this.logs = logs;
-      this.logsSource.next(logs);
-    });
+  // updateData(){
+  //   let observable = new Observable<{id:any, result:String}>(observer=>{
+  //     this.socket.on('updateData', (data)=>{
+  //       this.getLogs(data.id);
+  //       observer.next(data);
+  //     });
+  //     return () => {this.socket.disconnect();}
+  //   });
+  //   return observable;
+  // }
+  getAllLogs(user_id){
+    return this.http.get<[Log]>(this.endpoint+user_id);
+        // .subscribe(logs=>{
+        //   console.log(logs);
+        //   return logs;
+        // });
+    // return {error:'trouble getting logs'};
   }
 
+  getOneLog(user_id){
+    return this.http.get<Log>(this.endpoint+user_id +'/one');
+        // .subscribe(log=>{
+        //   console.log(log);
+        //   return log;
+        // });
+    // return {error:'trouble getting log'};
+  }
+  getRecentLogs(user_id,time){
+    return this.http.get<[Log]>(this.endpoint+user_id+'/'+time);
+  }
   addLog(log){
-    console.log(log);
     var headers = new HttpHeaders();
     headers.append('Content-Type', 'application/json');
-    this.http.post(this.endpoint+log.user_id,log,{headers:headers,responseType:'text'}).subscribe(log=>{
-      this.logs.unshift(log);
-      this.logsSource.next(this.logs);
-    })
+    return this.http.post(this.endpoint+log.user_id,log,{headers:headers,responseType:'text'});
+    // .subscribe(log=>{
+    //   console.log('Log Added');
+    //   return log;
+    // });
+    // return {error:'trouble adding logs'};
   }
 
 }

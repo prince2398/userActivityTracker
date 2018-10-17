@@ -3,24 +3,16 @@ import { HttpClient, HttpHeaders} from '@angular/common/http';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 
-declare const Pusher: any;
+// declare const Pusher: any;
 
-import { environment } from '../enviroments/enviroment';
+// import { environment } from '../enviroments/enviroment';
 import { User } from '../../../user';
 
 @Injectable({
   providedIn: 'root'
 })
 export class CollectDataService{
-  endpoint = 'api/';
-
-  user : User;
-  
-  private userSource = new BehaviorSubject(this.user);
-  currentUser = this.userSource.asObservable();
-
-  pusher: any;
-  channel: any;
+  endpoint = 'http://localhost:3000/api/';
 
   constructor(
     private http:HttpClient,
@@ -28,49 +20,53 @@ export class CollectDataService{
     private router:Router
   ){
     console.log('CollectDataService started...');
-    this.pusher = new Pusher(environment.pusher.key, {
-      cluster: environment.pusher.cluster,
-      encrypted: true
-    });
-    console.log(this.pusher);
-    this.channel = this.pusher.subscribe('events-channel');
+    // this.pusher = new Pusher(environment.pusher.key, {
+    //   cluster: environment.pusher.cluster,
+    //   encrypted: true
+    // });
+    // console.log(this.pusher);
+    // this.channel = this.pusher.subscribe('events-channel');
     
-    console.log('CollectDataService started...');
+    // console.log('CollectDataService started...');
     // console.log(this.currentUser);
   }
 
-  getData(id){
-    this.http.get<User>(this.endpoint+id).subscribe(user =>{
-      this.user = user;
-      this.userSource.next(user);
-    });
+  getUserData(id){
+    return this.http.get<User>(this.endpoint+id);
+        // .subscribe(user =>{
+        //   console.log('User Data: '+user);
+        // });
+    // return {error:'trouble getting User Data'};
   }
 
   updateUser(user:User){
-    this.userSource.next(user);
     var headers = new HttpHeaders();
     headers.append('Content-Type', 'application/json');
     return this.http.put(this.endpoint+user._id,user,{headers:headers,responseType: 'text'});
+        // .subscribe(user=>{
+        //   console.log('User Updated');
+        //   return user;
+        // });
+    // return {error:'trouble Updating User Data'};
   }
 
   createNewUser(){
     this.http.get<User>(this.endpoint).subscribe(user =>{
-      this.user = user;
       console.log(user);
-      this.userSource.next(user);
       this.router.navigate(['/'+user._id])
-    })
+    });
+    return {error:'trouble creating User Data'};
   }
 
-  incrementClicks(i){
-    this.user.clicks[i] += 1;
-    console.log(this.user.clicks);
-    this.updateUser(this.user).subscribe();
-  }
+  // incrementClicks(i){
+  //   this.user.clicks[i] += 1;
+  //   console.log(this.user.clicks);
+  //   this.updateUser(this.user).subscribe();
+  // }
   
-  incrementHover(i){
-    this.user.hovers[i] += 1;
-    console.log(this.user.hovers);
-    this.updateUser(this.user).subscribe();;
-  }
+  // incrementHover(i){
+  //   this.user.hovers[i] += 1;
+  //   console.log(this.user.hovers);
+  //   this.updateUser(this.user).subscribe();;
+  // }
 }

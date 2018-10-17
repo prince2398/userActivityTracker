@@ -10,11 +10,12 @@
       <h3>Hovers : {{user?.hovers}}</h3>
     </div>
     <h2>Logs</h2>
+    <br>
     <ul>
       <li *ngFor="let log of logs ">
         
-        <div *ngIf="log.user_id == id">
-          {{log?.time | date: "dd-MM-yyyy HH:mm:ss" }} : {{log.type}}ed on image {{log.image+1}}.
+        <div *ngIf="log?.user_id == id">
+          {{log?.time | date: "dd-MM-yyyy HH:mm:ss" }} : {{log?.type}}ed on image {{log?.image+1}}.
         </div>
       </li>
     </ul>

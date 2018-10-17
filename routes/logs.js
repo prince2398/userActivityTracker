@@ -34,6 +34,33 @@ router.get('/:id',(req,res)=>{
     })
 });
 
+router.get('/:id/one',(req,res)=>{
+    // console.log(req.params.id);
+    const query = {user_id:req.params.id}
+    Log.findOne(query,{}, { sort : { time : -1}},(err,log)=>{
+        if(err){
+            res.json({result : 'Failed',message: err});
+        }else{
+            res.json(log);
+        }
+    })
+});
+router.get('/:id/:time',(req,res)=>{
+    // console.log(req.params.id);
+    const query = {
+        user_id : req.params.id,
+        time : { $gt : req.params.time}
+    };
+
+    Log.find(query,{}, { sort : { time : -1}},(err,logs)=>{
+        if(err){
+            res.json({result : 'Failed',message: err});
+        }else{
+            res.json(logs);
+        }
+    })
+});
+
 router.post('/:id',(req,res)=>{
     const newLog = new Log(req.body);
     newLog.user_id = req.params.id;
@@ -41,10 +68,7 @@ router.post('/:id',(req,res)=>{
         if(err){
             res.send({result : 'Failed',message: err});
         }
-        pusher.trigger('log', 'Add', {
-            log : log,
-        });
-        res.json(JSON.stringify({result : 'success',message: "Log Added Succesfully"}));
+        res.json(log);
     });
 });
 module.exports = router;

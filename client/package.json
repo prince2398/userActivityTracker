@@ -24,7 +24,8 @@
     "pusher-js": "^4.3.1",
     "rxjs": "~6.2.0",
     "rxjs-compat": "^6.3.3",
-    "zone.js": "~0.8.26"
+    "zone.js": "~0.8.26",
+    "socket.io-client": "*"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "~0.8.0",

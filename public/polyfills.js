@@ -5459,6 +5459,7 @@ __webpack_require__.r(__webpack_exports__);
  * Zone JS is required by default for Angular itself.
  */
  // Included with Angular CLI.
+window.global = window;
 /***************************************************************************************************
  * APPLICATION IMPORTS
  */
@@ -5466,7 +5467,7 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ }),
 
-/***/ 1:
+/***/ 2:
 /*!********************************!*\
   !*** multi ./src/polyfills.ts ***!
   \********************************/
@@ -5478,5 +5479,5 @@ module.exports = __webpack_require__(/*! C:\Users\Rakesh\Desktop\PP\node\userAct
 
 /***/ })
 
-},[[1,"runtime"]]]);
+},[[2,"runtime"]]]);
 //# sourceMappingURL=polyfills.js.map

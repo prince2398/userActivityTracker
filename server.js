@@ -4,6 +4,9 @@ const bodyParser = require('body-parser');
 const cors = require('cors')
 const app = express();
 const mongoose = require('mongoose');
+const http = require('http');
+const socket = require('socket.io');
+
 
 const port = 3000;
 
@@ -40,6 +43,25 @@ app.get('*',(req,res)=>{
     res.sendFile(path.join(__dirname+'/public/index.html'));
 });
 
-app.listen(port,()=>{
+//for socket.io
+const server = http.Server(app);
+const io = socket(server);
+
+server.listen(port,()=>{
     console.log(`Server started on port ${port}`);
+});
+
+// socket events
+io.on('connection',(socket)=>{
+    console.log('New Connection made');
+
+    socket.on('join',(data)=>{
+        socket.join(data.id);
+        console.log(data.user + ' with id ' + data.id + ' is joined to server');
+    });
+    
+    socket.on('update',(data)=>{
+        socket.in(data.id).emit('updateData',{id: data.id,result:'Success'});
+    })
+
 });

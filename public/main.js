@@ -166,7 +166,7 @@ module.exports = ""
 /*! no static exports found */
 /***/ (function(module, exports) {
 
-module.exports = "<!DOCTYPE html>\n<html>\n  <head>\n    <title>Admin</title>\n  </head>\n  <body>\n    <div *ngIf=\"user\">\n      <h1>User Id : {{user?._id}}</h1>\n      <h3>Clicks : {{user?.clicks}}</h3>\n      <h3>Hovers : {{user?.hovers}}</h3>\n    </div>\n    <h2>Logs</h2>\n    <ul>\n      <li *ngFor=\"let log of logs \">\n        \n        <div *ngIf=\"log.user_id == id\">\n          {{log?.time | date: \"dd-MM-yyyy HH:mm:ss\" }} : {{log.type}}ed on image {{log.image+1}}.\n        </div>\n      </li>\n    </ul>\n  </body>\n</html>"
+module.exports = "<!DOCTYPE html>\n<html>\n  <head>\n    <title>Admin</title>\n  </head>\n  <body>\n    <div *ngIf=\"user\">\n      <h1>User Id : {{user?._id}}</h1>\n      <h3>Clicks : {{user?.clicks}}</h3>\n      <h3>Hovers : {{user?.hovers}}</h3>\n    </div>\n    <h2>Logs</h2>\n    <br>\n    <ul>\n      <li *ngFor=\"let log of logs \">\n        \n        <div *ngIf=\"log?.user_id == id\">\n          {{log?.time | date: \"dd-MM-yyyy HH:mm:ss\" }} : {{log?.type}}ed on image {{log?.image+1}}.\n        </div>\n      </li>\n    </ul>\n  </body>\n</html>"
 
 /***/ }),
 
@@ -182,9 +182,11 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "AdminComponent", function() { return AdminComponent; });
 /* harmony import */ var _angular_core__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @angular/core */ "./node_modules/@angular/core/fesm5/core.js");
 /* harmony import */ var _services_collect_data_service__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../services/collect-data.service */ "./src/app/services/collect-data.service.ts");
-/* harmony import */ var rxjs_observable_interval__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! rxjs/observable/interval */ "./node_modules/rxjs-compat/_esm5/observable/interval.js");
-/* harmony import */ var _services_log_data_service__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../../services/log-data.service */ "./src/app/services/log-data.service.ts");
-/* harmony import */ var _angular_router__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @angular/router */ "./node_modules/@angular/router/fesm5/router.js");
+/* harmony import */ var _services_log_data_service__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../services/log-data.service */ "./src/app/services/log-data.service.ts");
+/* harmony import */ var _angular_router__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @angular/router */ "./node_modules/@angular/router/fesm5/router.js");
+/* harmony import */ var socket_io_client__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! socket.io-client */ "./node_modules/socket.io-client/lib/index.js");
+/* harmony import */ var socket_io_client__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(socket_io_client__WEBPACK_IMPORTED_MODULE_4__);
+/* harmony import */ var rxjs__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! rxjs */ "./node_modules/rxjs/_esm5/index.js");
 var __decorate = (undefined && undefined.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -199,38 +201,80 @@ var __metadata = (undefined && undefined.__metadata) || function (k, v) {
 
 
 
+
 var AdminComponent = /** @class */ (function () {
     function AdminComponent(logService, dataService, route) {
-        var _this = this;
         this.logService = logService;
         this.dataService = dataService;
         this.route = route;
-        this.source = Object(rxjs_observable_interval__WEBPACK_IMPORTED_MODULE_2__["interval"])(500);
-        this.subscribe = this.source.subscribe(function (val) {
-            _this.dataService.getData(_this.id);
-        });
-        this.log = Object(rxjs_observable_interval__WEBPACK_IMPORTED_MODULE_2__["interval"])(500);
-        this.logSubscribe = this.log.subscribe(function (val) {
-            _this.logService.getLogs(_this.id);
-        });
+        this.logs = [];
+        this.socket = socket_io_client__WEBPACK_IMPORTED_MODULE_4__('http://localhost:3000');
     }
     AdminComponent.prototype.ngOnInit = function () {
         var _this = this;
+        //get id from route
         this.id = this.route.snapshot.paramMap.get('id');
-        this.dataService.getData(this.id);
-        this.dataService.currentUser.subscribe(function (user) { return _this.user = user; });
-        this.logService.getLogs(this.id);
-        this.logService.currentLog.subscribe(function (logs) { return _this.logs = logs; });
-        this.dataService.channel.bind('new-user', function (data) {
-            _this.user = data.user;
+        //socket join event emit
+        this.socket.emit('join', { user: 'admin', id: this.id });
+        //get data from api using api
+        this.dataService.getUserData(this.id).subscribe(function (user) {
+            _this.user = user;
         });
+        //add connection log
+        var now = new Date();
+        var newLog = {
+            time: now.getTime(),
+            type: 'Admin Connect',
+            image: null,
+            user_id: this.id,
+        };
+        this.logService.addLog(newLog).subscribe((function (log) {
+            console.log(JSON.parse(log));
+            _this.socket.emit('update', { id: _this.id });
+        }));
+        //get all log
+        this.logService.getAllLogs(this.id).subscribe(function (logs) {
+            for (var i = logs.length - 1; i >= 0; i--) {
+                _this.logs.unshift(logs[i]);
+            }
+        });
+        var observable = new rxjs__WEBPACK_IMPORTED_MODULE_5__["Observable"](function (observer) {
+            _this.socket.on('updateData', function (data) {
+                console.log('updated');
+                _this.updateLogs();
+                observer.next(data);
+            });
+            return function () { _this.socket.disconnect(); };
+        });
+        observable.subscribe(function (data) {
+            console.log('Updated logs');
+        });
+        // this.dataService.channel.bind('new-user', data => {
+        //   this.user = data.user ;
+        // });
+        // this.logService.updateData().subscribe((data)=>{});
+        this.socket.emit('join', { user: 'admin', id: this.id });
+        // this.socket.on('udateData',(data)=>{
+        //   if(data.result == 'success' && data.id == this.id ){
+        //     this.dataService.getData(this.id);
+        //     this.logService.getLogs(this.id);
+        //   }
+        // })
         // this.id = this.route.snapshot.params.id;
         // this.dataService.getData(this.id).subscribe((user)=>{
         //   this.user = user;
         // })
     };
-    AdminComponent.prototype.sortFunc = function (a, b) {
-        return b.time - a.time;
+    AdminComponent.prototype.updateLogs = function () {
+        var _this = this;
+        this.dataService.getUserData(this.id).subscribe(function (user) {
+            _this.user = user;
+        });
+        this.logService.getRecentLogs(this.user._id, this.logs[0].time).subscribe(function (logs) {
+            for (var i = logs.length - 1; i >= 0; i--) {
+                _this.logs.unshift(logs[i]);
+            }
+        });
     };
     AdminComponent = __decorate([
         Object(_angular_core__WEBPACK_IMPORTED_MODULE_0__["Component"])({
@@ -238,9 +282,9 @@ var AdminComponent = /** @class */ (function () {
             template: __webpack_require__(/*! ./admin.component.html */ "./src/app/components/admin/admin.component.html"),
             styles: [__webpack_require__(/*! ./admin.component.css */ "./src/app/components/admin/admin.component.css")]
         }),
-        __metadata("design:paramtypes", [_services_log_data_service__WEBPACK_IMPORTED_MODULE_3__["LogDataService"],
+        __metadata("design:paramtypes", [_services_log_data_service__WEBPACK_IMPORTED_MODULE_2__["LogDataService"],
             _services_collect_data_service__WEBPACK_IMPORTED_MODULE_1__["CollectDataService"],
-            _angular_router__WEBPACK_IMPORTED_MODULE_4__["ActivatedRoute"]])
+            _angular_router__WEBPACK_IMPORTED_MODULE_3__["ActivatedRoute"]])
     ], AdminComponent);
     return AdminComponent;
 }());
@@ -283,7 +327,6 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "NewUserComponent", function() { return NewUserComponent; });
 /* harmony import */ var _angular_core__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @angular/core */ "./node_modules/@angular/core/fesm5/core.js");
 /* harmony import */ var _services_collect_data_service__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../services/collect-data.service */ "./src/app/services/collect-data.service.ts");
-/* harmony import */ var _angular_router__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @angular/router */ "./node_modules/@angular/router/fesm5/router.js");
 var __decorate = (undefined && undefined.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -295,22 +338,18 @@ var __metadata = (undefined && undefined.__metadata) || function (k, v) {
 };
 
 
-
+// import { ActivatedRoute, Router } from '@angular/router';
+// import { Observable } from 'rxjs';
+// import { User } from '../../../../user';
 var NewUserComponent = /** @class */ (function () {
-    function NewUserComponent(router, route, dataService) {
-        this.router = router;
-        this.route = route;
+    function NewUserComponent(dataService) {
         this.dataService = dataService;
     }
     NewUserComponent.prototype.ngOnInit = function () {
-        var _this = this;
-        this.dataService.channel.bind('new-user', function (data) {
-            _this.user = data.user;
-        });
+        // this.dataService.channel.bind('new-user', data => {
+        //   this.user = data.user ;
+        // });
         this.dataService.createNewUser();
-        this.dataService.currentUser.subscribe(function (user) {
-            _this.user = user;
-        });
     };
     NewUserComponent = __decorate([
         Object(_angular_core__WEBPACK_IMPORTED_MODULE_0__["Component"])({
@@ -318,7 +357,7 @@ var NewUserComponent = /** @class */ (function () {
             template: __webpack_require__(/*! ./new-user.component.html */ "./src/app/components/new-user/new-user.component.html"),
             styles: [__webpack_require__(/*! ./new-user.component.css */ "./src/app/components/new-user/new-user.component.css")]
         }),
-        __metadata("design:paramtypes", [_angular_router__WEBPACK_IMPORTED_MODULE_2__["Router"], _angular_router__WEBPACK_IMPORTED_MODULE_2__["ActivatedRoute"], _services_collect_data_service__WEBPACK_IMPORTED_MODULE_1__["CollectDataService"]])
+        __metadata("design:paramtypes", [_services_collect_data_service__WEBPACK_IMPORTED_MODULE_1__["CollectDataService"]])
     ], NewUserComponent);
     return NewUserComponent;
 }());
@@ -345,7 +384,7 @@ module.exports = ""
 /*! no static exports found */
 /***/ (function(module, exports) {
 
-module.exports = "<!DOCTYPE html>\r\n<!DOCTYPE html>\r\n<html>\r\n    <head>\r\n        <title>Activity Tracker</title>\r\n        <link rel=\"stylesheet\" href=\"https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css\" integrity=\"sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO\" crossorigin=\"anonymous\">\r\n        <script src=\"https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js\" integrity=\"sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy\" crossorigin=\"anonymous\"></script>\r\n    </head>\r\n    <body>\r\n        <br><br>\r\n        <div class=\"container\">\r\n            <div class=\"row\">\r\n                <div class=\"col-md-4\">\r\n                    <div class=\"card mb-4 shadow-sm\">\r\n                        <img (click)=\"onClick(0)\" (mouseover)=\"onHover(0)\" class=\"card-img-top\" src= \"../../../assets/images/mongodb.png\">\r\n                        <p>clicks: {{user?.clicks[0]}} , hovers: {{user?.hovers[0] }}</p>\r\n                    </div>\r\n                </div>\r\n                <div class=\"col-md-4\">\r\n                    <div class=\"card mb-4 shadow-sm\">\r\n                        <img (click)=\"onClick(1)\" (mouseover)=\"onHover(1)\"class=\"card-img-top\" src= \"../../../assets/images/expressjs.png\">\r\n                        <p>clicks: {{user?.clicks[1] }} , hovers: {{user?.hovers[1] }}</p>\r\n                    </div>\r\n                </div>\r\n                <div class=\"col-md-4\">\r\n                    <div class=\"card mb-4 shadow-sm\">\r\n                        <img (click)=\"onClick(2)\" (mouseover)=\"onHover(2)\" class=\"card-img-top\" src= \"../../../assets/images/angularjs.jpg\">\r\n                        <p>clicks: {{user?.clicks[2] }} , hovers: {{user?.hovers[2] }}</p>\r\n                    </div>\r\n                </div>\r\n            </div>\r\n            <div class=\"row\">\r\n                <div class=\"col-md-2\">\r\n                </div>\r\n                <div class=\"col-md-4\">\r\n                    <div class=\"card mb-4 shadow-sm\">\r\n                        <img (click)=\"onClick(3)\" (mouseover)=\"onHover(3)\" class=\"card-img-top\" src= \"../../../assets/images/nodejs.png\">\r\n                        <p>clicks: {{user?.clicks[3] }} , hovers: {{user?.hovers[3] }}</p>\r\n                    </div>\r\n                </div>\r\n                <div class=\"col-md-4\">\r\n                    <div class=\"card mb-4 shadow-sm\">\r\n                        <img (click)=\"onClick(4)\" (mouseover)=\"onHover(4)\" class=\"card-img-top\" src= \"../../../assets/images/js.png\">\r\n                        <p>clicks: {{user?.clicks[4]}} , hovers: {{user?.hovers[4] }}</p>\r\n                    </div>\r\n                </div>\r\n                <div class=\"col-md-2\">\r\n                </div>\r\n            </div>\r\n        </div>\r\n\r\n        <script src=\"https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js\" integrity=\"sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy\" crossorigin=\"anonymous\"></script>\r\n    </body>\r\n</html>"
+module.exports = "<!DOCTYPE html>\r\n<!DOCTYPE html>\r\n<html>\r\n    <head>\r\n        <title>Activity Tracker</title>\r\n        <link rel=\"stylesheet\" href=\"https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css\" integrity=\"sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO\" crossorigin=\"anonymous\">\r\n    </head>\r\n    <body>\r\n        <br><br>\r\n        <div class=\"container\">\r\n            <div class=\"row\">\r\n                <div class=\"col-md-4\">\r\n                    <div class=\"card mb-4 shadow-sm\">\r\n                        <img (click)=\"onClick(0)\" (mouseover)=\"onHover(0)\" class=\"card-img-top\" src= \"../../../assets/images/mongodb.png\">\r\n                       \r\n                    </div>\r\n                </div>\r\n                <div class=\"col-md-4\">\r\n                    <div class=\"card mb-4 shadow-sm\">\r\n                        <img (click)=\"onClick(1)\" (mouseover)=\"onHover(1)\"class=\"card-img-top\" src= \"../../../assets/images/expressjs.png\">\r\n                        \r\n                    </div>\r\n                </div>\r\n                <div class=\"col-md-4\">\r\n                    <div class=\"card mb-4 shadow-sm\">\r\n                        <img (click)=\"onClick(2)\" (mouseover)=\"onHover(2)\" class=\"card-img-top\" src= \"../../../assets/images/angularjs.jpg\">\r\n                        \r\n                    </div>\r\n                </div>\r\n            </div>\r\n            <div class=\"row\">\r\n                <div class=\"col-md-2\">\r\n                </div>\r\n                <div class=\"col-md-4\">\r\n                    <div class=\"card mb-4 shadow-sm\">\r\n                        <img (click)=\"onClick(3)\" (mouseover)=\"onHover(3)\" class=\"card-img-top\" src= \"../../../assets/images/nodejs.png\">\r\n                        \r\n                    </div>\r\n                </div>\r\n                <div class=\"col-md-4\">\r\n                    <div class=\"card mb-4 shadow-sm\">\r\n                        <img (click)=\"onClick(4)\" (mouseover)=\"onHover(4)\" class=\"card-img-top\" src= \"../../../assets/images/js.png\">\r\n                       \r\n                    </div>\r\n                </div>\r\n                <div class=\"col-md-2\">\r\n                </div>\r\n            </div>\r\n        </div>\r\n\r\n        <script src=\"https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js\" integrity=\"sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy\" crossorigin=\"anonymous\"></script>\r\n    </body>\r\n</html>"
 
 /***/ }),
 
@@ -363,6 +402,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _services_collect_data_service__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../services/collect-data.service */ "./src/app/services/collect-data.service.ts");
 /* harmony import */ var _services_log_data_service__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../services/log-data.service */ "./src/app/services/log-data.service.ts");
 /* harmony import */ var _angular_router__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @angular/router */ "./node_modules/@angular/router/fesm5/router.js");
+/* harmony import */ var socket_io_client__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! socket.io-client */ "./node_modules/socket.io-client/lib/index.js");
+/* harmony import */ var socket_io_client__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(socket_io_client__WEBPACK_IMPORTED_MODULE_4__);
 var __decorate = (undefined && undefined.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -376,20 +417,39 @@ var __metadata = (undefined && undefined.__metadata) || function (k, v) {
 
 
 
+
 var UserComponent = /** @class */ (function () {
     function UserComponent(logService, dataService, route) {
         this.logService = logService;
         this.dataService = dataService;
         this.route = route;
+        this.socket = socket_io_client__WEBPACK_IMPORTED_MODULE_4__('http://localhost:3000');
     }
     UserComponent.prototype.ngOnInit = function () {
+        // this.dataService.channel.bind('new-user', data => {
+        //   this.user = data.user ;
+        // });
         var _this = this;
-        this.dataService.channel.bind('new-user', function (data) {
-            _this.user = data.user;
-        });
+        //get id from route
         this.id = this.route.snapshot.paramMap.get('id');
-        this.dataService.getData(this.id);
-        this.dataService.currentUser.subscribe(function (user) { return _this.user = user; });
+        // socket join event
+        this.socket.emit('join', { user: 'client', id: this.id });
+        //get user data from api
+        this.dataService.getUserData(this.id).subscribe(function (user) {
+            _this.user = user;
+        });
+        //Add Connection log 
+        var now = new Date();
+        var newLog = {
+            time: now.getTime(),
+            type: 'Connect',
+            image: null,
+            user_id: this.id,
+        };
+        this.logService.addLog(newLog).subscribe((function (log) {
+            console.log('Log Added' + log);
+            _this.socket.emit('update', { id: _this.id });
+        }));
         // console.log(this.route);
         // this.user.clicks = [0,0,0,0,0];  
         // this.user.hovers = [0,0,0,0,0];
@@ -397,7 +457,14 @@ var UserComponent = /** @class */ (function () {
         // console.log(this.user.hovers);
     };
     UserComponent.prototype.onClick = function (i) {
-        this.dataService.incrementClicks(i);
+        var _this = this;
+        //Click Update
+        this.user.clicks[i] += 1;
+        this.dataService.updateUser(this.user).subscribe(function (user) {
+            console.log('User Clicks Updated');
+            _this.user = JSON.parse(user);
+        });
+        //Add Log
         var now = new Date();
         var log = {
             time: now.getTime(),
@@ -405,13 +472,23 @@ var UserComponent = /** @class */ (function () {
             image: i,
             user_id: this.id,
         };
-        this.logService.addLog(log);
+        this.logService.addLog(log).subscribe(function (log) {
+            console.log('Log Added' + log);
+            _this.socket.emit('update', { id: _this.id });
+        });
         // this.user.clicks[i] = Number(this.user.clicks[i]) + Number(1);
         // this.dataService.updateUser(this.user).subscribe();
         // console.log(this.user.clicks);
     };
     UserComponent.prototype.onHover = function (i) {
-        this.dataService.incrementHover(i);
+        var _this = this;
+        //hover update
+        this.user.hovers[i] += 1;
+        this.dataService.updateUser(this.user).subscribe(function (user) {
+            console.log('User hover Updated');
+            _this.user = JSON.parse(user);
+        });
+        //Add Log
         var now = new Date();
         var log = {
             time: now.getTime(),
@@ -419,7 +496,10 @@ var UserComponent = /** @class */ (function () {
             image: i,
             user_id: this.id,
         };
-        this.logService.addLog(log);
+        this.logService.addLog(log).subscribe(function (log) {
+            console.log('Log Added' + log);
+            _this.socket.emit('update', { id: _this.id });
+        });
         // console.log(this.user.hovers);
         // this.user.hovers[i] = Number(this.user.hovers[i]) + Number(1);
         // this.dataService.updateUser(this.user).subscribe();
@@ -442,27 +522,6 @@ var UserComponent = /** @class */ (function () {
 
 /***/ }),
 
-/***/ "./src/app/enviroments/enviroment.ts":
-/*!*******************************************!*\
-  !*** ./src/app/enviroments/enviroment.ts ***!
-  \*******************************************/
-/*! exports provided: environment */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "environment", function() { return environment; });
-var environment = {
-    production: false,
-    pusher: {
-        key: '252cb0073819c9f5ae33',
-        cluster: 'ap2',
-    }
-};
-
-
-/***/ }),
-
 /***/ "./src/app/services/collect-data.service.ts":
 /*!**************************************************!*\
   !*** ./src/app/services/collect-data.service.ts ***!
@@ -475,9 +534,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "CollectDataService", function() { return CollectDataService; });
 /* harmony import */ var _angular_core__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @angular/core */ "./node_modules/@angular/core/fesm5/core.js");
 /* harmony import */ var _angular_common_http__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @angular/common/http */ "./node_modules/@angular/common/fesm5/http.js");
-/* harmony import */ var rxjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! rxjs */ "./node_modules/rxjs/_esm5/index.js");
-/* harmony import */ var _angular_router__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @angular/router */ "./node_modules/@angular/router/fesm5/router.js");
-/* harmony import */ var _enviroments_enviroment__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../enviroments/enviroment */ "./src/app/enviroments/enviroment.ts");
+/* harmony import */ var _angular_router__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @angular/router */ "./node_modules/@angular/router/fesm5/router.js");
 var __decorate = (undefined && undefined.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -490,66 +547,54 @@ var __metadata = (undefined && undefined.__metadata) || function (k, v) {
 
 
 
-
-
 var CollectDataService = /** @class */ (function () {
     function CollectDataService(http, route, router) {
         this.http = http;
         this.route = route;
         this.router = router;
-        this.endpoint = 'api/';
-        this.userSource = new rxjs__WEBPACK_IMPORTED_MODULE_2__["BehaviorSubject"](this.user);
-        this.currentUser = this.userSource.asObservable();
+        this.endpoint = 'http://localhost:3000/api/';
         console.log('CollectDataService started...');
-        this.pusher = new Pusher(_enviroments_enviroment__WEBPACK_IMPORTED_MODULE_4__["environment"].pusher.key, {
-            cluster: _enviroments_enviroment__WEBPACK_IMPORTED_MODULE_4__["environment"].pusher.cluster,
-            encrypted: true
-        });
-        console.log(this.pusher);
-        this.channel = this.pusher.subscribe('events-channel');
-        console.log('CollectDataService started...');
+        // this.pusher = new Pusher(environment.pusher.key, {
+        //   cluster: environment.pusher.cluster,
+        //   encrypted: true
+        // });
+        // console.log(this.pusher);
+        // this.channel = this.pusher.subscribe('events-channel');
+        // console.log('CollectDataService started...');
         // console.log(this.currentUser);
     }
-    CollectDataService.prototype.getData = function (id) {
-        var _this = this;
-        this.http.get(this.endpoint + id).subscribe(function (user) {
-            _this.user = user;
-            _this.userSource.next(user);
-        });
+    CollectDataService.prototype.getUserData = function (id) {
+        return this.http.get(this.endpoint + id);
+        // .subscribe(user =>{
+        //   console.log('User Data: '+user);
+        // });
+        // return {error:'trouble getting User Data'};
     };
     CollectDataService.prototype.updateUser = function (user) {
-        this.userSource.next(user);
         var headers = new _angular_common_http__WEBPACK_IMPORTED_MODULE_1__["HttpHeaders"]();
         headers.append('Content-Type', 'application/json');
         return this.http.put(this.endpoint + user._id, user, { headers: headers, responseType: 'text' });
+        // .subscribe(user=>{
+        //   console.log('User Updated');
+        //   return user;
+        // });
+        // return {error:'trouble Updating User Data'};
     };
     CollectDataService.prototype.createNewUser = function () {
         var _this = this;
         this.http.get(this.endpoint).subscribe(function (user) {
-            _this.user = user;
             console.log(user);
-            _this.userSource.next(user);
             _this.router.navigate(['/' + user._id]);
         });
-    };
-    CollectDataService.prototype.incrementClicks = function (i) {
-        this.user.clicks[i] += 1;
-        console.log(this.user.clicks);
-        this.updateUser(this.user).subscribe();
-    };
-    CollectDataService.prototype.incrementHover = function (i) {
-        this.user.hovers[i] += 1;
-        console.log(this.user.hovers);
-        this.updateUser(this.user).subscribe();
-        ;
+        return { error: 'trouble creating User Data' };
     };
     CollectDataService = __decorate([
         Object(_angular_core__WEBPACK_IMPORTED_MODULE_0__["Injectable"])({
             providedIn: 'root'
         }),
         __metadata("design:paramtypes", [_angular_common_http__WEBPACK_IMPORTED_MODULE_1__["HttpClient"],
-            _angular_router__WEBPACK_IMPORTED_MODULE_3__["ActivatedRoute"],
-            _angular_router__WEBPACK_IMPORTED_MODULE_3__["Router"]])
+            _angular_router__WEBPACK_IMPORTED_MODULE_2__["ActivatedRoute"],
+            _angular_router__WEBPACK_IMPORTED_MODULE_2__["Router"]])
     ], CollectDataService);
     return CollectDataService;
 }());
@@ -570,7 +615,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "LogDataService", function() { return LogDataService; });
 /* harmony import */ var _angular_core__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @angular/core */ "./node_modules/@angular/core/fesm5/core.js");
 /* harmony import */ var _angular_common_http__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @angular/common/http */ "./node_modules/@angular/common/fesm5/http.js");
-/* harmony import */ var rxjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! rxjs */ "./node_modules/rxjs/_esm5/index.js");
+/* harmony import */ var socket_io_client__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! socket.io-client */ "./node_modules/socket.io-client/lib/index.js");
+/* harmony import */ var socket_io_client__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(socket_io_client__WEBPACK_IMPORTED_MODULE_2__);
 var __decorate = (undefined && undefined.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -593,27 +639,47 @@ var LogDataService = /** @class */ (function () {
         //   user_id:this.;
         // }]
         this.http = http;
-        this.endpoint = 'logs/';
-        this.logs = [];
-        this.logsSource = new rxjs__WEBPACK_IMPORTED_MODULE_2__["BehaviorSubject"](this.logs);
-        this.currentLog = this.logsSource.asObservable();
+        this.endpoint = 'http://localhost:3000/logs/';
+        this.socket = socket_io_client__WEBPACK_IMPORTED_MODULE_2__('http://localhost:3000');
     }
-    LogDataService.prototype.getLogs = function (id) {
-        var _this = this;
-        this.http.get(this.endpoint + id).subscribe(function (logs) {
-            _this.logs = logs;
-            _this.logsSource.next(logs);
-        });
+    // updateData(){
+    //   let observable = new Observable<{id:any, result:String}>(observer=>{
+    //     this.socket.on('updateData', (data)=>{
+    //       this.getLogs(data.id);
+    //       observer.next(data);
+    //     });
+    //     return () => {this.socket.disconnect();}
+    //   });
+    //   return observable;
+    // }
+    LogDataService.prototype.getAllLogs = function (user_id) {
+        return this.http.get(this.endpoint + user_id);
+        // .subscribe(logs=>{
+        //   console.log(logs);
+        //   return logs;
+        // });
+        // return {error:'trouble getting logs'};
+    };
+    LogDataService.prototype.getOneLog = function (user_id) {
+        return this.http.get(this.endpoint + user_id + '/one');
+        // .subscribe(log=>{
+        //   console.log(log);
+        //   return log;
+        // });
+        // return {error:'trouble getting log'};
+    };
+    LogDataService.prototype.getRecentLogs = function (user_id, time) {
+        return this.http.get(this.endpoint + user_id + '/' + time);
     };
     LogDataService.prototype.addLog = function (log) {
-        var _this = this;
-        console.log(log);
         var headers = new _angular_common_http__WEBPACK_IMPORTED_MODULE_1__["HttpHeaders"]();
         headers.append('Content-Type', 'application/json');
-        this.http.post(this.endpoint + log.user_id, log, { headers: headers, responseType: 'text' }).subscribe(function (log) {
-            _this.logs.unshift(log);
-            _this.logsSource.next(_this.logs);
-        });
+        return this.http.post(this.endpoint + log.user_id, log, { headers: headers, responseType: 'text' });
+        // .subscribe(log=>{
+        //   console.log('Log Added');
+        //   return log;
+        // });
+        // return {error:'trouble adding logs'};
     };
     LogDataService = __decorate([
         Object(_angular_core__WEBPACK_IMPORTED_MODULE_0__["Injectable"])({
@@ -691,6 +757,17 @@ Object(_angular_platform_browser_dynamic__WEBPACK_IMPORTED_MODULE_1__["platformB
 
 module.exports = __webpack_require__(/*! C:\Users\Rakesh\Desktop\PP\node\userActivity\client\src\main.ts */"./src/main.ts");
 
+
+/***/ }),
+
+/***/ 1:
+/*!********************!*\
+  !*** ws (ignored) ***!
+  \********************/
+/*! no static exports found */
+/***/ (function(module, exports) {
+
+/* (ignored) */
 
 /***/ })
 
